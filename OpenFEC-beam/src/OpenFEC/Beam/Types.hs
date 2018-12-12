@@ -161,6 +161,7 @@ data DisbursementT f = Disbursement
   , _disbursement_candidate_id      :: B.PrimaryKey CandidateT f
   , _disbursement_committee_id      :: B.PrimaryKey CommitteeT f
   , _disbursement_line_number_label :: C f (Maybe Text)
+  , _disbursement_recipient_zip     :: C f (Maybe Text)
   , _disbursement_sub_id            :: C f Int
   , _disbursement_id                :: C f Int
   } deriving (Generic)
@@ -170,6 +171,7 @@ Disbursement (B.LensFor disbursement_date) (B.LensFor disbursement_amount)
   (B.LensFor disbursement_purpose_category) (B.LensFor disbursement_recipient_name)
   (CandidateKey (B.LensFor disbursement_candidate_id))
   (CommitteeKey (B.LensFor disbursement_committee_id)) (B.LensFor disbursement_line_number_label)
+  (B.LensFor disbursement_recipient_zip)
   (B.LensFor disbursement_sub_id) (B.LensFor disbursement_id) = B.tableLenses
 
 type Disbursement = DisbursementT Identity
@@ -198,6 +200,8 @@ data IndExpenditureT f  = IndExpenditure
   , _indExpenditure_description              :: C f (Maybe Text)
   , _indExpenditure_candidate_id             :: B.PrimaryKey CandidateT f
   , _indExpenditure_committee_id             :: B.PrimaryKey CommitteeT f
+  , _indExpenditure_payee_name               :: C f (Maybe Text)
+  , _indExpenditure_payee_zip                :: C f (Maybe Text)
   , _indExpenditure_sub_id                   :: C f Int
   , _indExpenditure_id                       :: C f Int
   } deriving (Generic)
@@ -207,6 +211,7 @@ IndExpenditure (B.LensFor indExpenditure_date) (B.LensFor indExpenditure_amount)
   (B.LensFor indExpenditure_office_total_ytd) (B.LensFor indExpenditure_category_code_full)
   (B.LensFor indExpenditure_description) (CandidateKey (B.LensFor indExpenditure_candidate_id))
   (CommitteeKey (B.LensFor indExpenditure_committee_id))
+  (B.LensFor indExpenditure_payee_name) (B.LensFor indExpenditure_payee_zip)
   (B.LensFor indExpenditure_sub_id) (B.LensFor indExpenditure_id) = B.tableLenses
 
 type IndExpenditure = IndExpenditureT Identity

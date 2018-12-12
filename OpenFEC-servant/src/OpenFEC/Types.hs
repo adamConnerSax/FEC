@@ -247,6 +247,7 @@ disbursementFromResultJSON cid val =
      <*> pure (CandidateKey cid)
      <*> val |#| "committee_id"
      <*> val |#| "line_number_label"
+     <*> val |#| "recipient_zip"
      <*> sub_idFromText (val |#| "sub_id")
      <*> pure 0
 
@@ -291,6 +292,8 @@ indExpenditureFromResultJSON val = IndExpenditure
   <*> val |#| "expenditure_description"
   <*> tryKeys ["candidate","candidate_id"] val
   <*> val |#| "committee_id"
+  <*> val |#| "payee_name"
+  <*> val |#| "payee_zip"
   <*> sub_idFromText (val |#| "sub_id")
   <*> pure 0
 

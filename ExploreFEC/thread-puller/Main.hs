@@ -44,18 +44,23 @@ import           Control.Monad                            (forM_, join, mapM_,
 import           Control.Monad.IO.Class                   (liftIO)
 import qualified Control.Monad.State                      as S
 
+import qualified Control.Foldl                            as FL
 import           Data.Aeson                               (decodeFileStrict,
                                                            encodeFile)
+import           Data.Char                                (toUpper)
 import qualified Data.Foldable                            as F
 import qualified Data.FuzzySet                            as FS
 import qualified Data.List                                as L
 import qualified Data.Map                                 as M
-import           Data.Maybe                               (fromMaybe, isNothing)
+import           Data.Maybe                               (fromMaybe, isJust,
+                                                           isNothing)
 import qualified Data.Sequence                            as Seq
 import qualified Data.Text                                as T
 import           Data.Time.Format                         (defaultTimeLocale,
                                                            parseTimeM)
 import           Data.Time.LocalTime                      (LocalTime)
+import           Data.Tuple.Select                        (sel1, sel2, sel3,
+                                                           sel4, sel5, sel6)
 import qualified Data.Vector                              as V
 --import           Data.Vinyl                               (ElField (..))
 --import           Data.Vinyl.Curry                         (runcurryX)
@@ -76,6 +81,7 @@ import           Servant.Client                           (ClientM,
 --import qualified Text.PrettyPrint.Tabulate                as PP
 
 
+data ExpenditureType = Coordinated | Independent deriving (Enum, Show)
 
 main :: IO ()
 main = do
@@ -103,6 +109,20 @@ main = do
       Right x  -> encodeFile jsonFileName x
   spending :: [CandidateSpending] <- fmap (fromMaybe []) (decodeFileStrict jsonFileName)
   mapM_ (print . describeSpending) spending
+  -- find all spending with recipient or payee related to something:
+  let toMatch = fmap T.toUpper ["American Media & Advocacy Group","National Media Digital", "Eagle"]
+      fuzzySet = FS.fromList toMatch
+      getMatch minScore x = case (FS.getWithMinScore minScore fuzzySet x) of
+        []    -> Nothing
+        x : _ -> Just x
+      disbursementToSimple d = (FEC._disbursement_date d, FEC._disbursement_amount d, FEC._disbursement_recipient_name d, Coordinated, FEC._disbursement_committee_id d)
+      indExpenditureToSimple i = (FEC._indExpenditure_date i, FEC._indExpenditure_amount i, FEC._indExpenditure_payee_name i, Independent, FEC._indExpenditure_committee_id i)
+      disbursementsToSimple = fmap disbursementToSimple . V.filter (\x -> isJust (FEC._disbursement_recipient_name x >>= getMatch 0.7))
+      indExpendituresToSimple = fmap indExpenditureToSimple . V.filter (\x -> (isJust (FEC._indExpenditure_payee_name x >>= getMatch 0.7))
+                                                                              && (FEC._indExpenditure_support_oppose_indicator x == FEC.Support))
+      compareByDate x y = compare (sel1 x) (sel1 y)
+      x = fmap (\(CandidateSpending c ds is _) -> (FEC._candidate_name c, L.sortBy compareByDate (V.toList (disbursementsToSimple ds) ++ V.toList (indExpendituresToSimple is)))) spending
+  mapM_ (\(cname,sp) -> putStrLn (T.unpack cname) >> mapM_ (putStrLn . show) sp) x
   return ()
 
 
