@@ -1,9 +1,8 @@
+{-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExplicitForAll            #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
---{-# LANGUAGE ImpredicativeTypes        #-}
-{-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE NoMonoLocalBinds          #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -162,7 +161,7 @@ loadSpendingForCandidate runServant dbConn candidate electionYear = do
         iNext <- fmap nextId $ B.runSelectReturningOne $ B.select maxIndExpenditureId
         pNext <- fmap nextId $ B.runSelectReturningOne $ B.select maxPartyExpenditureId
         mapM_ (B.runInsert . B.insert (FEC._openFEC_DB_disbursement FEC.openFEC_DB) . B.insertValues) $ chunksOf 80 $ addIds (FEC.disbursement_id) dNext $ V.toList $ _disbursements candidateSpending
-        mapM_ (B.runInsert . B.insert (FEC._openFEC_DB_indExpenditure FEC.openFEC_DB) . B.insertValues) $ chunksOf 80 $ addIds (FEC.indExpenditure_id) iNext $ V.toList $ _independentExpenditures candidateSpending
+        mapM_ (B.runInsert . B.insert (FEC._openFEC_DB_indExpenditure FEC.openFEC_DB) . B.insertValues) $ chunksOf 70 $ addIds (FEC.indExpenditure_id) iNext $ V.toList $ _independentExpenditures candidateSpending
         mapM_ (B.runInsert . B.insert (FEC._openFEC_DB_partyExpenditure FEC.openFEC_DB) . B.insertValues) $ chunksOf 100 $ addIds (FEC.partyExpenditure_id) pNext $ V.toList $ _partyExpenditures candidateSpending
 
         B.runDelete $ B.delete (FEC._openFEC_DB_candidate_to_load FEC.openFEC_DB) (\cidOnly -> FEC._candidate_id_only cidOnly B.==. (B.val_ $ FEC.CandidateKey . FEC._candidate_id $ candidate))
@@ -197,12 +196,6 @@ starting538NameMap = M.fromList
     ("Others", Just ("OTHERS","N/A"))
   , ("Phillip Aronoff",Just ("PHILLIP ARNOLD ARONOFF","H8TX29094"))
   , ("Rick Tyler", Just ("TYLER, RICK", "H6TN04218"))
---  , ("Lisa Blunt Rochester",Just ("BLUNT ROCHESTER, LISA", "H6DE00206"))
---  , ("Scott Walker", Just ("WALKER, SCOTT", "H6DE00214"))
---  , ("Greg Gianforte", Just ("GIANFORTE, GREG","H8MT01182"))
---  , ("Kathleen Williams", Just ("WILLIAMS, KATHLEEN","H8MT01232"))
---  , ("Elinor Swanson", Just ("SWANSON, ELINOR","H8MT01257"))
---  , ("Stephen J. Young", Just ("YOUNG, STEPHEN ROBERT NEALE","H8MI12112")) -- not sure about this.  Different names and districts.  Both in MI, tho
   ]
 
 decodeFrame :: Int
@@ -224,28 +217,7 @@ decodeFrame id f =
       (Field p90_vs) = f ^. rlens @P90Voteshare
   in FEC.Forecast538 <$> dateM <*> pure (FEC.CandidateKey "") <*> pure name <*> pure incumbent <*> pure model <*> pure winP <*> pure voteshare <*> pure p10_vs <*> pure p90_vs <*> pure id
 
-{-
-getIdAndUpdateMap :: Text
-                  -> M.Map Text (Maybe (FEC.Name, FEC.CandidateID))
-                  -> FEC.State
-                  -> FEC.District
-                  -> M.Map (FEC.State, FEC.District) (FS.FuzzySet, M.Map Text (FEC.Name, FEC.CandidateID))
-                  -> (Maybe FEC.CandidateID, M.Map Text (Maybe (FEC.Name, FEC.CandidateID)))
-getIdAndUpdateMap name idByName state district fuzzyAndMapByStateDistrict =
-  case (fmap snd . join $ M.lookup name idByName) of
-    Just cid -> (Just cid, idByName)
-    Nothing ->
-      case M.lookup (state, district) fuzzyAndMapByStateDistrict of
-        Nothing -> (Just "SD Fail", idByName)
-        Just (fuzzy, m) ->
-          case FS.getOne fuzzy (toUpperLastName name) of -- can be simplified from here down but we sacrifice error detail.  Can we either all this?
-            Nothing -> (Just "fuzzyMatch fail", M.insert name Nothing idByName)
-            Just fuzzyMatch ->
-              case M.lookup fuzzyMatch m of
-                Nothing -> (Just "fuzzyMap fail", M.insert name Nothing idByName)
-                Just (fecName,cid) -> (Just cid, M.insert name (Just (fecName, cid)) idByName)
 
--}
 maybeToEither :: a -> Maybe b -> Either a b
 maybeToEither x = maybe (Left x) Right
 
@@ -302,16 +274,7 @@ load538PollingData dbConn inputFile = do
   putStrLn $ "done inserting forecast rows."
   return ()
 
-{-
-  let matchName
-    frameToTableRow :: Record '[Forecastdate, State, District, Special, Candidate, Party, Incumbent, Model, Win_Probability, Voteshare, P10_voteshare,P90_voteshare] -> FEC.Forecast538
-    forecastTableRows = FL.set <$> loadedRows
--}
---- 1st pass. Get unique names
-
---  and match them to candidate table.
-
-openFEC_SqliteFile = "../DBs/FEC.db"
+openFEC_SqliteFile = "../DBs/FECWithPayees.db"
 
 main :: IO ()
 main = do
@@ -320,10 +283,10 @@ main = do
       doUpdateCandidates = False
       doUpdateCommittees = False
       doUpdateSpendingWorkTable = False
-      doLoadTransactions = False
+      doLoadTransactions = True
       doLoad538Data = True
       doIf doIt action = if doIt then action else return ()
-      managerSettings = tlsManagerSettings { managerModifyRequest = \req -> FEC.delayQueries FEC.fecQueryLimit >> {- putStrLn req >> -}  return req }
+      managerSettings = tlsManagerSettings { managerModifyRequest = \req -> FEC.delayQueries FEC.fecQueryLimit >> {- putStrLn (show req) >> -} return req }
   manager <- newManager managerSettings
   dbConn <- SL.open openFEC_SqliteFile
   let clientEnv = mkClientEnv manager FEC.baseUrl

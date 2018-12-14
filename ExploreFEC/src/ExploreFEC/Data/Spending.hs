@@ -13,10 +13,12 @@ import qualified Control.Lens.Fold      as L
 import           Control.Monad          (sequence)
 import           Control.Monad.IO.Class (liftIO)
 import qualified Data.Aeson             as A
+import qualified Data.List              as List
 import           Data.Monoid            (Sum (..))
 import qualified Data.Text              as T
 import qualified Data.Vector            as V
 import           GHC.Generics           (Generic)
+
 import qualified OpenFEC.API            as FEC
 import qualified OpenFEC.Types          as FEC
 
@@ -62,7 +64,7 @@ getCandidateSpending' cand committeeIDs electionYear payeeNames = do
   let candidateId = FEC._candidate_id cand
       getDisbursements x = FEC.getDisbursements x candidateId electionYear [] []
 --  liftIO $ putStrLn $ "committees: " ++ show (FEC._committee_id <$> committees)
-  disbursements <- getDisbursements committeeIDs
+  disbursements <- if (List.length committeeIDs > 0) then getDisbursements committeeIDs else return V.empty
   indExpenditures <- FEC.getIndependentExpendituresByCandidate candidateId [electionYear] []
   partyExpenditures <- FEC.getPartyExpenditures candidateId [electionYear] []
   return $ CandidateSpending cand disbursements indExpenditures partyExpenditures
