@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module ExploreFEC.Config where
 
 import           Dhall
@@ -11,4 +12,4 @@ data DataSources = DataSources
                    , electionResults_2018House_csv :: FilePath
                    } deriving (Generic)
 
-instance Interpret DataSources
+instance FromDhall DataSources

@@ -39,6 +39,8 @@ import qualified Data.Text              as T
 import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (LocalTime)
 
+import GHC.Int (Int32)
+
 electionResultsFile = "./data/resultsHouse2018.csv" -- relative to where you execute
 tableTypes "ElectionResults" "../data/resultsHouse2018.csv" -- relative to sub-project ??
 {-
@@ -67,7 +69,7 @@ loadElectionResults dbConn candidateMatchMap = do
                 -> Record '[State, District, LastName, VoteShare]
                 -> (Seq.Seq FEC.ElectionResult, Seq.Seq FEC.ElectionResult)
       addRecord (matched, unmatched) r =
-        let sd = (r ^. state, r ^. district)
+        let sd = (r ^. state, fromIntegral (r ^. district))
             x = do
               (fuzzy, m) <- maybeToEither ("SD Fail: " <> (T.pack $ show sd)) $ M.lookup sd matcherMap
               fuzzyMatch <- maybeToEither ("fuzzyMatchFail: " <> (T.pack $ show sd)) $ FS.getOne fuzzy (T.toUpper $ r ^. lastName)

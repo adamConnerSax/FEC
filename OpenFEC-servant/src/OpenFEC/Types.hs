@@ -46,6 +46,7 @@ import           Web.HttpApiData           (ToHttpApiData (..))
 import           OpenFEC.JsonUtils
 import qualified OpenFEC.Pagination        as FEC
 
+import           GHC.Int (Int32)
 import           OpenFEC.Beam.Types
 -- All fields are prefixed with entity name followed by field name.
 -- If the field name begins with entity name (e.g., "candidate_id" in Candidate) we begin with double underscore.
@@ -57,8 +58,8 @@ import           OpenFEC.Beam.Types
 --type State = Text
 --type District = Int
 --type Amount = Scientific
-type ElectionYear = Int
-type ElectionCycle = Int
+type ElectionYear = Int32
+type ElectionCycle = Int32
 
 
 officeToText :: Office -> Text
@@ -241,13 +242,13 @@ disbursementFromResultJSON cid val =
      <$> tryTwoKeys "disbursement_date" "load_date" (utcToLocalTime utc) val -- val |#| "disbursement_date"
      <*> amountE
      <*> adj_amountE
-     <*> num_candidatesE
+     <*> fmap fromIntegral num_candidatesE
      <*> val |#| "disbursement_purpose_category"
      <*> val |#| "recipient_name"
      <*> pure (CandidateKey cid)
      <*> val |#| "committee_id"
      <*> val |#| "line_number_label"
-     <*> sub_idFromText (val |#| "sub_id")
+     <*> fmap fromIntegral (sub_idFromText (val |#| "sub_id"))
      <*> pure 0
 
 instance PP.CellValueFormatter SpendingIntention
@@ -291,7 +292,7 @@ indExpenditureFromResultJSON val = IndExpenditure
   <*> val |#| "expenditure_description"
   <*> tryKeys ["candidate","candidate_id"] val
   <*> val |#| "committee_id"
-  <*> sub_idFromText (val |#| "sub_id")
+  <*> fmap fromIntegral (sub_idFromText (val |#| "sub_id"))
   <*> pure 0
 
 
@@ -311,5 +312,5 @@ partyExpenditureFromResultJSON cid val = PartyExpenditure
   <*> pure (CandidateKey cid)
   <*> tryKeys ["committee","committee_id"] val -- val |#| "committee_id"
   <*> tryKeys ["committee","name"] val -- val |#| "committee_name"
-  <*> sub_idFromText (val |#| "sub_id")
+  <*> fmap fromIntegral (sub_idFromText (val |#| "sub_id"))
   <*> pure 0

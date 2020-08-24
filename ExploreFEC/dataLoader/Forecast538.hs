@@ -38,6 +38,8 @@ import qualified Data.Text              as T
 import           Data.Time.Format       (defaultTimeLocale, parseTimeM)
 import           Data.Time.LocalTime    (LocalTime)
 
+import GHC.Int (Int32)
+
 houseForecastFile = "../data/house_district_forecast.csv"
 tableTypes "HouseForecast538" "../data/house_district_forecast.csv"
 
@@ -48,7 +50,7 @@ starting538NameMap = M.fromList
   , ("Rick Tyler", Just ("TYLER, RICK", "H6TN04218"))
   ]
 
-decodeFrame :: Int
+decodeFrame :: Int32
   -> Record '[Forecastdate, State, District, Special, Candidate, Party, Incumbent, Model, WinProbability, Voteshare, P10Voteshare, P90Voteshare]
   -> Maybe FEC.Forecast538
 decodeFrame id f =
@@ -106,7 +108,7 @@ load538ForecastData dbConn candidateNameMatchMap = do
   let matcherMap = candidateNameMatchMap nameStateDistrictId
       getFECId :: Seq.Seq FEC.Forecast538
                -> Record '[Forecastdate, State, District, Special, Candidate, Party, Incumbent, Model, WinProbability, Voteshare, P10Voteshare, P90Voteshare]
-               -> S.State (Int, M.Map Text (Maybe (FEC.Name, FEC.CandidateID))) (Seq.Seq FEC.Forecast538)
+               -> S.State (Int32, M.Map Text (Maybe (FEC.Name, FEC.CandidateID))) (Seq.Seq FEC.Forecast538)
       getFECId fs x = do
         (nextId, matched) <- S.get
         case decodeFrame nextId x of
@@ -114,7 +116,7 @@ load538ForecastData dbConn candidateNameMatchMap = do
           Just fcast -> do
             let name538 = (FEC._forecast538_candidate_name fcast)
                 (Field state) = x ^. rlens @State
-                (Field district) = x ^. rlens @District
+                (Field district) = fromIntegral (x ^. rlens @District)
                 (idM, newMatched) = getIdAndUpdateMap name538 matched state district matcherMap
                 cid = maybe ("N/A") id idM
             S.put (nextId + 1, newMatched)

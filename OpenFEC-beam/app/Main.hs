@@ -25,7 +25,14 @@ import           OpenFEC.Beam.Types
 
 -- create the migration
 openFEC_DbMigratable :: CheckedDatabaseSettings B.Sqlite OpenFEC_DB
-openFEC_DbMigratable = defaultMigratableDbSettings @B.Sqlite
+openFEC_DbMigratable = defaultMigratableDbSettings
+
+{-
+openFEC_DbMigration :: forall syntax be
+                       . B.IsSql92DdlCommandSyntax syntax
+                    => CheckedDatabaseSettings be OpenFEC_DB
+openFEC_DbMigration = defaultMigratableDbSettings @syntax
+-}
 
 main :: IO ()
 main = do

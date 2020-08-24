@@ -39,17 +39,19 @@ import qualified Data.Vector            as V
 import qualified OpenFEC.Pagination     as FEC
 import qualified OpenFEC.Types          as FEC
 
+import GHC.Int (Int32)
+
 baseUrl = BaseUrl Https "api.open.fec.gov" 443 "/v1"
 
 data FEC_Routes route = FEC_Routes
   {
-    _candidates :: route :- "candidates" :> QueryParam "api_key" Text :> QueryParams "candidate_status" Text :> QueryParams "office" Text :> QueryParams "party" Text :> QueryParam "state" Text :> QueryParam "district" Int :>  QueryParam "election_year" Int :> QueryParams "cycle" Int :> QueryParams "candidate_id" Text :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
-  , _committees :: route :- "committees" :> QueryParam "api_key" Text :> QueryParam "election_year" Int :> QueryParams "cycle" Int :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
-  , _committeesByCandidate :: route :- "candidate" :> Capture "candidate_id" Text :> "committees" :> QueryParam "api_key" Text :> QueryParam "election_year" Int :> QueryParams "cycle" Int :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
-  , _reports :: route :- "committee" :> Capture "committee_id" Text :> "reports" :> QueryParam "api_key" Text :> QueryParams "report_type" Text :> QueryParams "year" Int :> QueryParams "cycle" Int :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
-  , _disbursements :: route :- "schedules" :> "schedule_b" :> QueryParam "api_key" Text :> QueryParams "committee_id" Text :> QueryParam "two_year_transaction_period" Int :> QueryParams "recipient_name" Text :> QueryParams "recipient_committee_id" Text :> QueryParam "per_page" Int :> QueryParam "last_index" Int :> QueryParam "last_disbursement_date" LocalTime :> Get '[JSON] A.Value
-  , _independent_expenditures :: route :- "schedules" :> "schedule_e" :> QueryParam "api_key" Text :> QueryParam "candidate_id" Text :> QueryParam "committee_id" Text :> QueryParams "cycle" Int :> QueryParams "payee_name" Text :> QueryParam "last_index" Int :> QueryParam "last_expenditure_date" LocalTime :> Get '[JSON] A.Value
-  , _party_expenditures :: route :- "schedules" :> "schedule_f" :>  QueryParam "api_key" Text :> QueryParam "candidate_id" Text :> QueryParams "cycle" Int :> QueryParams "payee_name" Text :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
+    _candidates :: route :- "candidates" :> QueryParam "api_key" Text :> QueryParams "candidate_status" Text :> QueryParams "office" Text :> QueryParams "party" Text :> QueryParam "state" Text :> QueryParam "district" Int32 :>  QueryParam "election_year" Int32 :> QueryParams "cycle" Int32 :> QueryParams "candidate_id" Text :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
+  , _committees :: route :- "committees" :> QueryParam "api_key" Text :> QueryParam "election_year" Int32 :> QueryParams "cycle" Int32 :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
+  , _committeesByCandidate :: route :- "candidate" :> Capture "candidate_id" Text :> "committees" :> QueryParam "api_key" Text :> QueryParam "election_year" Int32 :> QueryParams "cycle" Int32 :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
+  , _reports :: route :- "committee" :> Capture "committee_id" Text :> "reports" :> QueryParam "api_key" Text :> QueryParams "report_type" Text :> QueryParams "year" Int32 :> QueryParams "cycle" Int32 :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
+  , _disbursements :: route :- "schedules" :> "schedule_b" :> QueryParam "api_key" Text :> QueryParams "committee_id" Text :> QueryParam "two_year_transaction_period" Int32 :> QueryParams "recipient_name" Text :> QueryParams "recipient_committee_id" Text :> QueryParam "per_page" Int :> QueryParam "last_index" Int :> QueryParam "last_disbursement_date" LocalTime :> Get '[JSON] A.Value
+  , _independent_expenditures :: route :- "schedules" :> "schedule_e" :> QueryParam "api_key" Text :> QueryParam "candidate_id" Text :> QueryParam "committee_id" Text :> QueryParams "cycle" Int32 :> QueryParams "payee_name" Text :> QueryParam "last_index" Int :> QueryParam "last_expenditure_date" LocalTime :> Get '[JSON] A.Value
+  , _party_expenditures :: route :- "schedules" :> "schedule_f" :>  QueryParam "api_key" Text :> QueryParam "candidate_id" Text :> QueryParams "cycle" Int32 :> QueryParams "payee_name" Text :> QueryParam "per_page" Int :> QueryParam "page" Int :> Get '[JSON] FEC.Page
   }
   deriving (Generic)
 
