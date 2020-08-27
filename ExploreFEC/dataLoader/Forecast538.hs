@@ -116,8 +116,8 @@ load538ForecastData dbConn candidateNameMatchMap = do
           Just fcast -> do
             let name538 = (FEC._forecast538_candidate_name fcast)
                 (Field state) = x ^. rlens @State
-                (Field district) = fromIntegral (x ^. rlens @District)
-                (idM, newMatched) = getIdAndUpdateMap name538 matched state district matcherMap
+                (Field district) = x ^. rlens @District
+                (idM, newMatched) = getIdAndUpdateMap name538 matched state (fromIntegral district) matcherMap
                 cid = maybe ("N/A") id idM
             S.put (nextId + 1, newMatched)
             return (fs Seq.|> fcast {FEC._forecast538_candidate_id = FEC.CandidateKey cid})

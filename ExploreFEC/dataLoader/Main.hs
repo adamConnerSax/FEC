@@ -95,6 +95,7 @@ import           Servant.Client                 ( ClientM
 
 import qualified Text.PrettyPrint.Tabulate     as PP
 
+import GHC.Int (Int32)
 
 
 -- create the migration
@@ -108,13 +109,13 @@ uniqueListBy f = fmap L.head . L.groupBy (\x y -> f x == f y) . L.sortBy
   (\x y -> compare (f x) (f y))
 
 countCandidateRows = B.aggregate_
-  (\_ -> B.as_ @Int B.countAll_)
+  (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_candidate FEC.openFEC_DB)
 countCommitteeRows = B.aggregate_
-  (\_ -> B.as_ @Int B.countAll_)
+  (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_committee FEC.openFEC_DB)
 countCxCRows = B.aggregate_
-  (\_ -> B.as_ @Int B.countAll_)
+  (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_candidate_x_committee FEC.openFEC_DB)
 
 loadCandidates
@@ -232,7 +233,7 @@ maxPartyExpenditureId =
         )
 
 -- reverse makes this order-preserving.  Do we care?
-addIds :: Lens' a Int -> Int -> [a] -> [a]
+addIds :: Lens' a Int32 -> Int32 -> [a] -> [a]
 addIds l firstId as = reverse . fst $ F.foldl'
   (\(newAs, newId) oldA -> (((l .~ newId) oldA) : newAs, newId + 1))
   ([], firstId)
@@ -271,7 +272,7 @@ loadSpendingForCandidate runServant dbConn candidate electionYear = do
     Right candidateSpending -> do
       putStrLn $ T.unpack $ describeSpending candidateSpending
       B.runBeamSqlite dbConn $ do
-        let nextId = maybe 0 (+ 1)
+        let nextId :: Maybe Int32 -> Int32 = maybe 0 (+ 1)
         dNext <- fmap nextId $ B.runSelectReturningOne $ B.select
           maxDisbursementId
         iNext <- fmap nextId $ B.runSelectReturningOne $ B.select
@@ -346,7 +347,7 @@ data Config = Config
   , doLoad538Data             :: Bool
   , doLoadElectionResults     :: Bool
   } deriving (D.Generic)
-instance D.Interpret Config
+instance D.FromDhall Config
 
 main :: IO ()
 main = do

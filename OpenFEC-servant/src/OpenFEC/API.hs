@@ -86,7 +86,7 @@ delayQueries (QueryLimit n per) =
 
 getCandidatesPage :: [FEC.Office] -> [FEC.Party] -> Maybe FEC.State -> Maybe FEC.District -> Maybe FEC.ElectionYear -> [FEC.ElectionYear] -> FEC.PageNumber -> ClientM FEC.Page
 getCandidatesPage offices parties stateM districtM electionYearM cycles page =
-  (_candidates fecClients) (Just fecApiKey) [] (FEC.officeToText <$> offices) (FEC.partyToText <$> parties) stateM districtM electionYearM cycles [] (Just fecMaxPerPage) (Just page)
+  (_candidates fecClients) (Just fecApiKey) ["C"] (FEC.officeToText <$> offices) (FEC.partyToText <$> parties) stateM districtM electionYearM cycles [] (Just fecMaxPerPage) (Just page)
 
 getCandidates :: [FEC.Office] -> [FEC.Party] ->  Maybe FEC.State -> Maybe FEC.District -> Maybe FEC.ElectionYear ->  [FEC.ElectionYear] -> ClientM (Vector FEC.Candidate)
 getCandidates offices parties stateM districtM electionYearM cycles =
