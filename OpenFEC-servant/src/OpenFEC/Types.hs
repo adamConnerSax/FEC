@@ -31,9 +31,9 @@ import           Data.Scientific           (FPFormat (Fixed), Scientific,
                                             formatScientific)
 import           Data.Text                 (Text, pack, unpack)
 import           Data.Time.Calendar        (Day)
-import           Data.Time.Clock           (UTCTime)
+import           Data.Time.Clock           (UTCTime, utctDay)
 import           Data.Time.Format          (defaultTimeLocale, formatTime)
-import           Data.Time.LocalTime       (LocalTime, utc, utcToLocalTime)
+import           Data.Time.LocalTime       (LocalTime(..), TimeOfDay(..), utc, utcToLocalTime, midnight)
 import           Data.Vector               (Vector)
 import qualified Data.Vector               as V
 import           GHC.Generics              (Generic)
@@ -151,6 +151,22 @@ instance A.FromJSON Committee where
   parseJSON = A.genericParseJSON A.defaultOptions {A.fieldLabelModifier = drop 1}
 
 instance A.ToJSON Committee where
+  toJSON = A.genericToJSON A.defaultOptions {A.fieldLabelModifier = drop 1}
+
+candidateTotalsFromResultJSON :: A.Value -> Either ByteString CandidateTotals
+candidateTotalsFromResultJSON val = CandidateTotals
+  <$> val |#| "candidate_id"
+  <*> val |#| "cash_on_hand_end_period"
+  <*> val |#| "disbursements"
+  <*> val |#| "receipts"
+  <*> val |#| "debts_owed_by_committee"
+  <*> fmap (\x -> LocalTime x (TimeOfDay 23 59 59)) (tryTwoKeys "last_file_date" "load_date" utctDay val)
+
+
+instance A.FromJSON CandidateTotals where
+  parseJSON = A.genericParseJSON A.defaultOptions {A.fieldLabelModifier = drop 1}
+
+instance A.ToJSON CandidateTotals where
   toJSON = A.genericToJSON A.defaultOptions {A.fieldLabelModifier = drop 1}
 
 --makeLenses ''Committee

@@ -107,9 +107,51 @@ instance B.Table CandidateT where
 
 deriving instance Show CandidateKey
 deriving instance Eq CandidateKey
+deriving instance Ord CandidateKey
 
 instance B.Beamable CandidateT
 instance B.Beamable (B.PrimaryKey CandidateT)
+
+data CandidateTotalsT f = CandidateTotals
+  {
+    _candidate_totals_candidate_id :: B.PrimaryKey CandidateT f
+  , _candidate_totals_cash_on_hand :: C f Amount
+  , _candidate_totals_disbursements :: C f Amount
+  , _candidate_totals_receipts :: C f Amount
+  , _candidate_totals_committee_debts :: C f Amount
+  , _candidate_totals_last_file_date :: C f LocalTime
+  
+  } deriving (Generic)
+
+CandidateTotals
+  (CandidateKey (B.LensFor candidate_totals_candidate_id))
+  (B.LensFor candidate_totals_cash_on_hand)
+  (B.LensFor candidate_totals_disbursements)
+  (B.LensFor candidate_totals_receipts)
+  (B.LensFor candidate_totals_committee_debts)
+  (B.LensFor candidate_totals_last_file_date)
+  = B.tableLenses
+
+type CandidateTotals = CandidateTotalsT Identity
+type CandidateTotalsKey = B.PrimaryKey CandidateTotalsT Identity
+
+instance A.FromJSON CandidateTotalsKey where
+  parseJSON = fmap CandidateTotalsKey . A.parseJSON
+
+instance A.ToJSON CandidateTotalsKey where
+  toJSON (CandidateTotalsKey x) = A.toJSON x
+
+deriving instance Show CandidateTotals
+deriving instance Eq CandidateTotals
+deriving instance Eq CandidateTotalsKey
+deriving instance Ord CandidateTotalsKey
+
+instance B.Table CandidateTotalsT where
+  data PrimaryKey CandidateTotalsT f = CandidateTotalsKey (B.PrimaryKey CandidateT f) deriving (Generic)
+  primaryKey x = CandidateTotalsKey ( _candidate_totals_candidate_id x)
+
+instance B.Beamable CandidateTotalsT
+instance B.Beamable (B.PrimaryKey CandidateTotalsT)
 
 data CommitteeT f = Committee
   {
@@ -347,9 +389,20 @@ data OpenFEC_DB f = OpenFEC_DB
   , _openFEC_DB_forecast538 :: f (B.TableEntity Forecast538T)
   , _openFEC_DB_electionResult :: f (B.TableEntity ElectionResultT)
   , _openFEC_DB_candidate_to_load :: f (B.TableEntity CandidateIdOnlyT)
+  , _openFEC_DB_candidate_totals :: f (B.TableEntity CandidateTotalsT)
   } deriving (Generic)
 
-OpenFEC_DB (B.TableLens openFEC_DB_candidate) (B.TableLens openFEC_DB_committee) (B.TableLens openFEC_DB_candidate_x_committee) (B.TableLens openFEC_DB_disbursement) (B.TableLens openFEC_DB_indExpenditure) (B.TableLens openFEC_DB_partyExpenditure) (B.TableLens openFEC_forecast538) (B.TableLens openFEC_DB_electionResults) (B.TableLens openFEC_DB_candidate_to_load)
+OpenFEC_DB
+  (B.TableLens openFEC_DB_candidate)
+  (B.TableLens openFEC_DB_committee)
+  (B.TableLens openFEC_DB_candidate_x_committee)
+  (B.TableLens openFEC_DB_disbursement)
+  (B.TableLens openFEC_DB_indExpenditure)
+  (B.TableLens openFEC_DB_partyExpenditure)
+  (B.TableLens openFEC_forecast538)
+  (B.TableLens openFEC_DB_electionResults)
+  (B.TableLens openFEC_DB_candidate_to_load)
+  (B.TableLens openFEC_DB_candidate_totals)
   = B.dbLenses
 
 instance B.Database be OpenFEC_DB

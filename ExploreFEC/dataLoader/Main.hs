@@ -111,6 +111,11 @@ uniqueListBy f = fmap L.head . L.groupBy (\x y -> f x == f y) . L.sortBy
 countCandidateRows = B.aggregate_
   (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_candidate FEC.openFEC_DB)
+
+countCandidatesTotalsRows = B.aggregate_
+  (\_ -> B.as_ @Int32 B.countAll_)
+  (B.all_ $ FEC._openFEC_DB_candidate_totals FEC.openFEC_DB)
+  
 countCommitteeRows = B.aggregate_
   (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_committee FEC.openFEC_DB)
@@ -149,6 +154,37 @@ loadCandidates runServant dbConn getCands electionYears = do
           ++ maybe "0 (Error counting)" show totalRows
           ++ " rows."
 
+loadCandidateTotals
+  :: (forall a . ClientM a -> IO (Either ClientError a))
+  -> SL.Connection
+  -> ([FEC.ElectionYear] -> ClientM (V.Vector FEC.CandidateTotals))
+  -> [FEC.ElectionYear]
+  -> IO ()
+loadCandidateTotals runServant dbConn getTotals electionYears = do
+  servantRes <- runServant $ getTotals electionYears
+  case servantRes of
+    Left err -> putStrLn $ "Servant Query returned an error: " ++ show err
+    Right cTotalsV -> do
+      let cTotalsL = uniqueListBy (FEC._candidate_totals_candidate_id) $ V.toList cTotalsV
+      putStrLn
+        $  "Loading candidates totals table to DB. Got "
+        ++ show (L.length cTotalsL)
+        ++ " unique candidates for election years="
+        ++ show electionYears
+      B.runBeamSqlite dbConn $ do
+        mapM_
+            ( B.runInsert
+            . B.insert (FEC._openFEC_DB_candidate_totals FEC.openFEC_DB)
+            . B.insertValues
+            )
+          $ chunksOf 100 cTotalsL
+        totalRows <- B.runSelectReturningOne $ B.select countCandidatesTotalsRows
+        liftIO
+          $  putStrLn
+          $  "Loaded "
+          ++ maybe "0 (Error counting)" show totalRows
+          ++ " rows."
+          
 loadCommittees
   :: (forall a . ClientM a -> IO (Either ClientError a))
   -> SL.Connection
@@ -314,6 +350,8 @@ loadSpendingForCandidate runServant dbConn candidate electionYear = do
               B.==. (B.val_ $ FEC.CandidateKey . FEC._candidate_id $ candidate)
           )
 
+       
+
 candidateNameMatchMap
   :: [(FEC.Name, FEC.State, FEC.District, FEC.CandidateID)]
   -> M.Map
@@ -341,6 +379,7 @@ data Config = Config
   , electionYear              :: D.Natural
   , doDbMigrations            :: Bool
   , doUpdateCandidates        :: Bool
+  , doUpdateCandidatesTotals  :: Bool
   , doUpdateCommittees        :: Bool
   , doUpdateSpendingWorkTable :: Bool
   , doLoadTransactions        :: Bool
@@ -355,7 +394,7 @@ main = do
     doIf doIt action = if doIt then action else return ()
     managerSettings = tlsManagerSettings
       { managerModifyRequest =
-        \req -> FEC.delayQueries FEC.fecQueryLimit >> {- putStrLn req >> -}
+        \req -> FEC.delayQueries FEC.fecQueryLimit >> putStrLn (show req) >> 
                                                       return req
       }
   config <- D.input D.auto "./config/dataloader.dhall"
@@ -377,6 +416,13 @@ main = do
       dbConn
       (\x -> FEC.getCandidates [] [] Nothing Nothing (Just eYear) x)
       [eYear]
+  doIf (doUpdateCandidatesTotals config) $ do
+    putStrLn $ "updating candidates totals table"
+    loadCandidateTotals
+      runServant
+      dbConn
+      (\x -> FEC.getCandidatesTotals Nothing [] (Just eYear) x [])
+      [eYear]      
   doIf (doUpdateCommittees config) $ do
     putStrLn $ "updating committee table"
     loadCommittees runServant dbConn (FEC.getCommittees Nothing) [eYear]
