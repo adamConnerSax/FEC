@@ -36,6 +36,7 @@ library
                      , http-api-data
                      , OpenFEC-beam
                      , pptable
+                     , foldl
                      , rate-limit
                      , safe-exceptions
                      , scientific

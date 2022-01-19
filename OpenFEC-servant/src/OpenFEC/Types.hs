@@ -308,6 +308,8 @@ indExpenditureFromResultJSON val = IndExpenditure
   <*> val |#| "expenditure_description"
   <*> tryKeys ["candidate","candidate_id"] val
   <*> val |#| "committee_id"
+  <*> val |#| "transaction_id"
+  <*> val |#| "amendment_indicator"
   <*> fmap fromIntegral (sub_idFromText (val |#| "sub_id"))
   <*> pure 0
 

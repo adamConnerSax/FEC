@@ -260,11 +260,13 @@ data IndExpenditureT f  = IndExpenditure
   , _indExpenditure_description              :: C f (Maybe Text)
   , _indExpenditure_candidate_id             :: B.PrimaryKey CandidateT f
   , _indExpenditure_committee_id             :: B.PrimaryKey CommitteeT f
+  , _indExpenditure_transaction_id           :: C f Text
+  , _indExpenditure_amendment_indicator      :: C f Text
   , _indExpenditure_sub_id                   :: C f Int32
   , _indExpenditure_id                       :: C f Int32
   } deriving (Generic)
 
-IndExpenditure (B.LensFor indExpenditure_date) (B.LensFor indExpenditure_amount) (B.LensFor indExpenditure_amount_from_ytd) (B.LensFor indExpenditure_support_oppose_indicator) (B.LensFor indExpenditure_office_total_ytd) (B.LensFor indExpenditure_category_code_full) (B.LensFor indExpenditure_description) (CandidateKey (B.LensFor indExpenditure_candidate_id)) (CommitteeKey (B.LensFor indExpenditure_committee_id)) (B.LensFor indExpenditure_sub_id) (B.LensFor indExpenditure_id)
+IndExpenditure (B.LensFor indExpenditure_date) (B.LensFor indExpenditure_amount) (B.LensFor indExpenditure_amount_from_ytd) (B.LensFor indExpenditure_support_oppose_indicator) (B.LensFor indExpenditure_office_total_ytd) (B.LensFor indExpenditure_category_code_full) (B.LensFor indExpenditure_description) (CandidateKey (B.LensFor indExpenditure_candidate_id)) (CommitteeKey (B.LensFor indExpenditure_committee_id)) (B.LensFor indExpenditure_transaction_id) (B.LensFor indExpenditure_amendment_indicator) (B.LensFor indExpenditure_sub_id) (B.LensFor indExpenditure_id)
   = B.tableLenses
 
 type IndExpenditure = IndExpenditureT Identity

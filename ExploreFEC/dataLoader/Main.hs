@@ -125,28 +125,31 @@ countCxCRows = B.aggregate_
 
 loadCandidates
   :: (forall a . ClientM a -> IO (Either ClientError a))
-  -> SL.Connection
+  -> SL.Connection  
   -> ([FEC.ElectionYear] -> ClientM (V.Vector FEC.Candidate))
   -> [FEC.ElectionYear]
+  -> [FEC.Office]
   -> IO ()
-loadCandidates runServant dbConn getCands electionYears = do
+loadCandidates runServant dbConn getCands electionYears offices = do
   servantRes <- runServant $ getCands electionYears
   case servantRes of
     Left err -> putStrLn $ "Servant Query returned an error: " ++ show err
     Right candidatesV -> do
       let candidatesL = uniqueListBy (FEC._candidate_id) $ V.toList candidatesV
+          candidatesL' = if not (null offices) then filter ((`elem` offices) . FEC._candidate_office) candidatesL else candidatesL
       putStrLn
         $  "Loading candidates table to DB. Got "
-        ++ show (L.length candidatesL)
+        ++ show (L.length candidatesL')
         ++ " unique candidates for election years="
-        ++ show electionYears
+        ++ show electionYears        
+        ++ if not (null offices) then (" and offices in " ++ show offices) else ""
       B.runBeamSqlite dbConn $ do
         mapM_
             ( B.runInsert
             . B.insert (FEC._openFEC_DB_candidate FEC.openFEC_DB)
             . B.insertValues
             )
-          $ chunksOf 100 candidatesL
+          $ chunksOf 100 candidatesL'
         totalRows <- B.runSelectReturningOne $ B.select countCandidateRows
         liftIO
           $  putStrLn
@@ -329,7 +332,7 @@ loadSpendingForCandidate runServant dbConn candidate electionYear = do
             . B.insert (FEC._openFEC_DB_indExpenditure FEC.openFEC_DB)
             . B.insertValues
             )
-          $ chunksOf 80
+          $ chunksOf 50
           $ addIds (FEC.indExpenditure_id) iNext
           $ V.toList
           $ _independentExpenditures candidateSpending
@@ -394,7 +397,7 @@ main = do
     doIf doIt action = if doIt then action else return ()
     managerSettings = tlsManagerSettings
       { managerModifyRequest =
-        \req -> FEC.delayQueries FEC.fecQueryLimit >> putStrLn (show req) >> 
+        \req -> FEC.delayQueries FEC.fecQueryLimit >> {- putStrLn (show req) >> -}
                                                       return req
       }
   config <- D.input D.auto "./config/dataloader.dhall"
@@ -416,6 +419,7 @@ main = do
       dbConn
       (\x -> FEC.getCandidates [] [] Nothing Nothing (Just eYear) x)
       [eYear]
+      [FEC.Senate]
   doIf (doUpdateCandidatesTotals config) $ do
     putStrLn $ "updating candidates totals table"
     loadCandidateTotals

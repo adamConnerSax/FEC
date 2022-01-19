@@ -1,11 +1,11 @@
-{ openFEC_Db = "/Users/adam/DataScience/DBs/FEC2020.db"
+{ openFEC_Db = "/Users/adam/DataScience/DBs/FEC2020_senate.db"
 , electionYear = 2020
-, doDbMigrations = True
+, doDbMigrations = False
 , doUpdateCandidates = False
-, doUpdateCandidatesTotals = True
+, doUpdateCandidatesTotals = False
 , doUpdateCommittees = False
 , doUpdateSpendingWorkTable = False
-, doLoadTransactions = False
+, doLoadTransactions = True
 , doLoad538Data = False
 , doLoadElectionResults = False
 }

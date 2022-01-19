@@ -8,6 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE TypeApplications             #-}
 module OpenFEC.API where
 
 
@@ -18,12 +19,15 @@ import           Servant.Client.Generic
 
 import           Control.Concurrent     (threadDelay)
 import           Control.Exception.Safe (throw)
+import qualified Control.Foldl as FL
+import Control.Lens ((^.))
 import           Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.State    as S
 import           Control.RateLimit      (RateLimit (..), rateLimitExecution)
 import qualified Data.Aeson             as A
 import           Data.ByteString.Char8  (pack)
 import qualified Data.Foldable          as F
+import qualified Data.List as L
 import qualified Data.Map               as M
 import           Data.Maybe             (fromMaybe)
 import           Data.Monoid            ((<>))
@@ -272,6 +276,7 @@ getIndependentExpendituresByCandidateIPage cid cycles payeeNames liM leM = do
 fixIndEx :: Vector FEC.IndExpenditure -> Vector FEC.IndExpenditure
 fixIndEx x =
   -- remove identical on same day
+  {-
   let f ie = do
         prevByCommitteeOnDay <- S.get
         let cid = FEC._indExpenditure_committee_id ie
@@ -281,6 +286,13 @@ fixIndEx x =
         S.put (M.insert mapKey (ie : prevOnDayL) prevByCommitteeOnDay)
         if isDupe then return False else return True
       deduped = S.evalState (V.filterM f x) M.empty
+  -}
+  -- remove all but one if identical transaction id
+  let dateAmt t = (FEC._indExpenditure_date t, FEC._indExpenditure_amount t)
+      groupByDateAmtF = FL.Fold (\m t -> M.insertWith (<>) (dateAmt t) [t] m) M.empty id
+      groupByDateAmt = FL.fold groupByDateAmtF 
+      chooseBestTransactions ts = L.filter ((== "N") . FEC._indExpenditure_amendment_indicator) ts
+      deduped = V.fromList $ concat $ fmap snd $ M.toList $ fmap chooseBestTransactions $ groupByDateAmt x                                
   -- compute new amounts based on ytd since there are still dupes and re-estimates and ...
       g ie = do
         prevByCommittee <- S.get
