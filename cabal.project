@@ -1,8 +1,18 @@
-packages: ./OpenFEC-servant ./ExploreFEC ./OpenFEC-beam ../Frames-utils ../data-science-utils
+packages: ./OpenFEC-servant ./ExploreFEC ./OpenFEC-beam  ~/DataScience/Frames-streamly ~/DataScience/heidi
 jobs: 4
+allow-newer: foldl-statistics:hashable, cereal-time:time, formattable:time, heidi:base, generic-trie:base
+
+source-repository-package
+  type: git
+  location: https://github.com/adamConnerSax/Frames-utils
+  tag: 3a22510326a741bebd1ea64ea021d3e4392e70e5
+
+source-repository-package
+  type: git
+  location: https://github.com/adamConnerSax/data-science-utils
+  tag: af09df26bc9f64c5a95d9d0d4ed1830e1e8e59e2
 
 
-allow-newer: hashable, http-client, random, hvega, time
 
 -- until 0.5.0.0 is released
 --source-repository-package
@@ -19,34 +29,34 @@ allow-newer: hashable, http-client, random, hvega, time
 --    type: git
 --    location: https://github.com/timbod7/haskell-chart
 --    subdir: chart-cairo
---    tag: 23e9739b80ecbb6fe70c4a7989714414f9f915c7    
+--    tag: 23e9739b80ecbb6fe70c4a7989714414f9f915c7
 
 --source-repository-package
 --    type: git
 --    location: https://github.com/timbod7/haskell-chart
 --    subdir: chart
---    tag: 23e9739b80ecbb6fe70c4a7989714414f9f915c7    
+--    tag: 23e9739b80ecbb6fe70c4a7989714414f9f915c7
 
 -- Beam
 source-repository-package
     type: git
-    location: https://github.com/haskell-beam/beam
+    location: https://github.com/adamConnerSax/beam
     subdir: beam-core
-    tag: 8049cbfa78ca6da12e19c66d81cf4cd9a87cbc65
+    tag: da1736c2a28a7ac0bdec2d1852b393b914f0773e
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-beam/beam
+    location: https://github.com/adamConnerSax/beam
     subdir: beam-sqlite
-    tag: 8049cbfa78ca6da12e19c66d81cf4cd9a87cbc65
+    tag: da1736c2a28a7ac0bdec2d1852b393b914f0773e
 
 source-repository-package
     type: git
-    location: https://github.com/haskell-beam/beam
+    location: https://github.com/adamConnerSax/beam
     subdir: beam-migrate
-    tag: 8049cbfa78ca6da12e19c66d81cf4cd9a87cbc65
-           
-      
+    tag: da1736c2a28a7ac0bdec2d1852b393b914f0773e
+
+
 source-repository-package
     type: git
     location: https://github.com/adamConnerSax/fuzzyset-haskell
@@ -56,10 +66,3 @@ source-repository-package
     type: git
     location: https://github.com/Soostone/formattable
     tag: 93935b295a451c76d4cf6244c0687b595abe5893
-
-
-source-repository-package
-  type: git
-  location: https://github.com/lehins/massiv
-  tag: a2e8c1933607ae15201d344617bab1d54e2f6175
-  subdir: massiv
