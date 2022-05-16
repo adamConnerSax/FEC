@@ -115,7 +115,7 @@ countCandidateRows = B.aggregate_
 countCandidatesTotalsRows = B.aggregate_
   (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_candidate_totals FEC.openFEC_DB)
-  
+
 countCommitteeRows = B.aggregate_
   (\_ -> B.as_ @Int32 B.countAll_)
   (B.all_ $ FEC._openFEC_DB_committee FEC.openFEC_DB)
@@ -125,7 +125,7 @@ countCxCRows = B.aggregate_
 
 loadCandidates
   :: (forall a . ClientM a -> IO (Either ClientError a))
-  -> SL.Connection  
+  -> SL.Connection
   -> ([FEC.ElectionYear] -> ClientM (V.Vector FEC.Candidate))
   -> [FEC.ElectionYear]
   -> [FEC.Office]
@@ -141,7 +141,7 @@ loadCandidates runServant dbConn getCands electionYears offices = do
         $  "Loading candidates table to DB. Got "
         ++ show (L.length candidatesL')
         ++ " unique candidates for election years="
-        ++ show electionYears        
+        ++ show electionYears
         ++ if not (null offices) then (" and offices in " ++ show offices) else ""
       B.runBeamSqlite dbConn $ do
         mapM_
@@ -187,7 +187,7 @@ loadCandidateTotals runServant dbConn getTotals electionYears = do
           $  "Loaded "
           ++ maybe "0 (Error counting)" show totalRows
           ++ " rows."
-          
+
 loadCommittees
   :: (forall a . ClientM a -> IO (Either ClientError a))
   -> SL.Connection
@@ -353,7 +353,7 @@ loadSpendingForCandidate runServant dbConn candidate electionYear = do
               B.==. (B.val_ $ FEC.CandidateKey . FEC._candidate_id $ candidate)
           )
 
-       
+
 
 candidateNameMatchMap
   :: [(FEC.Name, FEC.State, FEC.District, FEC.CandidateID)]
@@ -426,7 +426,7 @@ main = do
       runServant
       dbConn
       (\x -> FEC.getCandidatesTotals Nothing [] (Just eYear) x [])
-      [eYear]      
+      [eYear]
   doIf (doUpdateCommittees config) $ do
     putStrLn $ "updating committee table"
     loadCommittees runServant dbConn (FEC.getCommittees Nothing) [eYear]
@@ -475,5 +475,3 @@ main = do
 --    Right x  -> PP.printTable x
   return ()
 -}
-
-
